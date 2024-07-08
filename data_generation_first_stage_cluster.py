@@ -216,7 +216,7 @@ for epoch in range(num_epochs):
     test_losses.append(test_loss)
 
     if epoch % 10 == 0:
-	print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}')
+        print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}')
 
 
 # Save the model
