@@ -12,5 +12,5 @@
 
 module load python/3.9.0
 
-source ../venvs/sciml3/bin/activate?
+source ../venvs/sciml3/bin/activate
 python3 data_generation_first_stage_cluster.py
