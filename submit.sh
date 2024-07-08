@@ -6,9 +6,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --time=10:00
+#SBATCH --time=50:00
 #SBATCH --gpus=1
-#SBATCH --mem-per-cpu=4G
+#SBATCH --mem-per-cpu=10G
 
 module load python/3.9.0
 

@@ -70,12 +70,12 @@ class FourierSeriesDataset(Dataset):
 # Generate dataset
 num_samples = 10000
 num_points = 1000
-cluster_dataset = FourierSeriesDataset(num_samples, num_points)
+#cluster_dataset = FourierSeriesDataset(num_samples, num_points)
 
 # # Create DataLoader
-batch_size = 32
-dataloader = DataLoader(cluster_dataset, batch_size=batch_size, shuffle=True)
-torch.save(cluster_dataset, 'cluster_derivative_dataset.pt')
+#batch_size = 32
+#dataloader = DataLoader(cluster_dataset, batch_size=batch_size, shuffle=True)
+#torch.save(cluster_dataset, 'cluster_derivative_dataset.pt')
 
 
 # %% [markdown]
@@ -177,7 +177,7 @@ model1.load_state_dict(torch.load('model_weights.pth'))
 train_losses = []
 test_losses = []
 
-num_epochs = 10
+num_epochs = 2000
 for epoch in range(num_epochs):
     model1.train()
     train_loss = 0.0
@@ -215,12 +215,13 @@ for epoch in range(num_epochs):
     train_losses.append(train_loss)
     test_losses.append(test_loss)
 
-    print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}')
+    if epoch % 10 == 0:
+	print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}')
 
 
 # Save the model
 # Don't save the model right now
-# torch.save(model.state_dict(), 'model_weights.pth')
+torch.save(model.state_dict(), 'model_weights_after_first_stage.pth')
 
 # To load the model later:
 # model = SimpleCNN()
@@ -248,10 +249,12 @@ def plot_losses(train_losses, test_losses, xmin=None, ymax=None):
     plt.yscale('log')  # Set the y-axis to logarithmic scale
     plt.legend()
     plt.grid(True)
+    plt.savefig('loss_plot.png')
     plt.show()
+    plt.close()
 
 # %%
-# plot_losses(train_losses=train_losses, test_losses=test_losses)
+plot_losses(train_losses=train_losses, test_losses=test_losses)
 
 # %%
 model1.eval()  # Set the model to evaluation mode
@@ -284,6 +287,7 @@ plt.xlabel('x')
 plt.ylabel('y')
 plt.legend()
 plt.grid(True)
+plt.savefig('function_comparison_plot.png')
 plt.show()
 
 
