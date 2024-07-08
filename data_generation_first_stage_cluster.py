@@ -70,20 +70,19 @@ class FourierSeriesDataset(Dataset):
 # Generate dataset
 num_samples = 10000
 num_points = 1000
-# dataset = FourierSeriesDataset(num_samples, num_points)
+cluster_dataset = FourierSeriesDataset(num_samples, num_points)
 
 # # Create DataLoader
-# batch_size = 32
-# dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-# torch.save(dataset, 'derivative_dataset.pt')
+batch_size = 32
+dataloader = DataLoader(cluster_dataset, batch_size=batch_size, shuffle=True)
+torch.save(cluster_dataset, 'cluster_derivative_dataset.pt')
 
-    
 
 # %% [markdown]
 # ## Load previously saved dataset
 
 # %%
-dataset = torch.load('derivative_dataset.pt')
+dataset = torch.load('cluster_derivative_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
