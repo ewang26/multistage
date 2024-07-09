@@ -167,7 +167,7 @@ optimizer = optim.Adam(model1.parameters())
 # ## Load in previously saved model weights from 300 epochs
 
 # %%
-model1.load_state_dict(torch.load('model_weights.pth'))
+model1.load_state_dict(torch.load('first_stage_1000epochs_weights.pth'))
 
 # %% [markdown]
 # ## Training loop
@@ -177,7 +177,7 @@ model1.load_state_dict(torch.load('model_weights.pth'))
 train_losses = []
 test_losses = []
 
-num_epochs = 2000
+num_epochs = 500
 for epoch in range(num_epochs):
     model1.train()
     train_loss = 0.0
