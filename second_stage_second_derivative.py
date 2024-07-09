@@ -74,18 +74,17 @@ class FourierSeriesDataset(Dataset):
 # Generate dataset
 num_samples = 10000
 num_points = 1000
-dataset = FourierSeriesDataset(num_samples, num_points)
+#dataset = FourierSeriesDataset(num_samples, num_points)
 
 # Create DataLoader
-batch_size = 32
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-torch.save(dataset, 'second_derivative_dataset.pt')
+#batch_size = 32
+#dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+#torch.save(dataset, 'second_derivative_dataset.pt')
 
 # %% [markdown]
 # ## Load previously saved dataset
 
 # %%
-# dataset = torch.load('derivative_dataset.pt')
 # to use the cluster dataset, use:
 dataset = torch.load('second_derivative_dataset.pt')
 
@@ -231,8 +230,8 @@ def first_stage_training(num_epochs):
 # Save the model
 # Don't save the model right now
 
-first_stage_training(400)
-torch.save(model1.state_dict(), 'first_stage_400epochs_second_derivative_weights.pth')
+first_stage_training(1000)
+torch.save(model1.state_dict(), 'first_stage_1000epochs_second_derivative_weights.pth')
 
 # %%
 def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=None, filename=None):
@@ -260,7 +259,7 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.show()
 
 # %%
-plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_stage_second_derivative_loss')
+plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_stage_second_derivative__1000epochs_loss')
 
 # %%
 model1.eval()  # Set the model to evaluation mode
@@ -379,7 +378,7 @@ residual_optimizer = optim.Adam(residual_model.parameters())
 train_losses2 = []
 test_losses2 = []
 
-num_epochs = 400
+num_epochs = 1000
 for epoch in range(num_epochs):
     residual_model.train()
     train_loss = 0.0
@@ -414,12 +413,12 @@ for epoch in range(num_epochs):
 
 # Save the residual model
 # Don't save the residual model right now
-torch.save(residual_model.state_dict(), 'second_stage_400epochs_second_derivative_weights.pth')
+torch.save(residual_model.state_dict(), 'second_stage_1000epochs_second_derivative_weights.pth')
 
 print("Residual model training finished!")
 
 # %%
-plot_losses(train_losses=train_losses2, test_losses=test_losses2, filename='second_stage_second_derivative_loss')
+plot_losses(train_losses=train_losses2, test_losses=test_losses2, filename='second_stage_second_derivative_1000epochs_loss')
 
 # %% [markdown]
 # Something is not right about how I am training on the residuals
