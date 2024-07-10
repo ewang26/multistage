@@ -74,19 +74,20 @@ class FourierSeriesDataset(Dataset):
 # Generate dataset
 num_samples = 10000
 num_points = 1000
-#dataset = FourierSeriesDataset(num_samples, num_points)
+# dataset = FourierSeriesDataset(num_samples, num_points)
 
-# Create DataLoader
-#batch_size = 32
-#dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-#torch.save(dataset, 'second_derivative_dataset.pt')
+# # Create DataLoader
+# batch_size = 32
+# dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+# torch.save(dataset, 'datasets/second_derivative_dataset.pt')
 
 # %% [markdown]
 # ## Load previously saved dataset
 
 # %%
+# dataset = torch.load('derivative_dataset.pt')
 # to use the cluster dataset, use:
-dataset = torch.load('second_derivative_dataset.pt')
+dataset = torch.load('datasets/second_derivative_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
@@ -171,9 +172,8 @@ optimizer = optim.Adam(model1.parameters())
 # ## Load in previously saved model weights from 300 epochs
 
 # %%
-# model1.load_state_dict(torch.load('model_weights.pth'))
 # to use model from cluster, change this to 
-# model1.load_state_dict(torch.load('first_stage_1000epochs_weights.pth'))
+model1.load_state_dict(torch.load('models/first_stage_1000epochs_second_derivative_weights.pth'))
 
 
 # %% [markdown]
@@ -230,8 +230,8 @@ def first_stage_training(num_epochs):
 # Save the model
 # Don't save the model right now
 
-first_stage_training(1000)
-torch.save(model1.state_dict(), 'first_stage_1000epochs_second_derivative_weights.pth')
+# first_stage_training(1000)
+# torch.save(model1.state_dict(), 'models/first_stage_1000epochs_second_derivative_weights.pth')
 
 # %%
 def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=None, filename=None):
@@ -244,13 +244,6 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.title('Loss over Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    # if xmin:
-    #     plt.xlim(xmin=xmin)
-    #     min_loss = min(min(train_losses[xmin-1:]), min(test_losses[xmin-1:]))
-    #     max_loss = max(max(train_losses[xmin-1:]), max(test_losses[xmin-1:]))
-    #     plt.ylim(min_loss, max_loss)
-    # if ymax:
-    #     plt.ylim(ymax=ymax)
     plt.yscale('log')  # Set the y-axis to logarithmic scale
     plt.legend()
     plt.grid(True)
@@ -259,7 +252,7 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.show()
 
 # %%
-plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_stage_second_derivative__1000epochs_loss')
+# plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_stage_second_derivative_loss')
 
 # %%
 model1.eval()  # Set the model to evaluation mode
@@ -296,7 +289,7 @@ plt.show()
 
 # %%
 smallest_five = heapq.nsmallest(5, test_losses)
-smallest_five
+print(f"Smallest five test losses are: {smallest_five}")
 
 # %% [markdown]
 # ## Multi-stage component: first correction network
@@ -305,7 +298,7 @@ smallest_five
 
 # %%
 def compute_normalized_residual(model, dataloader):
-    model1.eval() # model1 is the trained first stage network
+    model.eval() # model1 is the trained first stage network
     residuals = []
     with torch.no_grad():
         for batch_functions, batch_derivatives in dataloader:
@@ -374,51 +367,57 @@ residual_criterion = nn.MSELoss()
 residual_optimizer = optim.Adam(residual_model.parameters())
 
 # %%
-# Training loop for residual model
-train_losses2 = []
-test_losses2 = []
-
-num_epochs = 1000
-for epoch in range(num_epochs):
-    residual_model.train()
-    train_loss = 0.0
-    test_loss = 0.0
-
-    for batch_functions, batch_residuals in residual_train_loader:
-
-        outputs = residual_model(batch_functions.unsqueeze(1))
-        loss = residual_criterion(outputs, batch_residuals.unsqueeze(1))
-
-        residual_optimizer.zero_grad()
-        loss.backward()
-        residual_optimizer.step()
-        train_loss += loss.item()
-
-    train_loss /= len(residual_train_loader)
-
-    residual_model.eval()
-    with torch.no_grad():
-        for batch_functions, batch_residuals in residual_test_loader:
-            outputs = residual_model(batch_functions.unsqueeze(1))
-            loss = residual_criterion(outputs, batch_residuals.unsqueeze(1))
-            test_loss += loss.item()
-
-    test_loss /= len(residual_test_loader)
-
-    print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}')
-    
-    train_losses2.append(train_loss)
-    test_losses2.append(test_loss)
-
-
-# Save the residual model
-# Don't save the residual model right now
-torch.save(residual_model.state_dict(), 'second_stage_1000epochs_second_derivative_weights.pth')
-
-print("Residual model training finished!")
+residual_model.load_state_dict(torch.load('models/second_stage_1000epochs_second_derivative_weights.pth'))
 
 # %%
-plot_losses(train_losses=train_losses2, test_losses=test_losses2, filename='second_stage_second_derivative_1000epochs_loss')
+# # Training loop for residual model
+# train_losses2 = []
+# test_losses2 = []
+
+# num_epochs = 1000
+# for epoch in range(num_epochs):
+#     residual_model.train()
+#     train_loss = 0.0
+#     test_loss = 0.0
+
+#     for batch_functions, batch_residuals in residual_train_loader:
+
+#         outputs = residual_model(batch_functions.unsqueeze(1))
+#         loss = residual_criterion(outputs, batch_residuals.unsqueeze(1))
+
+#         residual_optimizer.zero_grad()
+#         loss.backward()
+#         residual_optimizer.step()
+#         train_loss += loss.item()
+
+#     train_loss /= len(residual_train_loader)
+
+#     residual_model.eval()
+#     with torch.no_grad():
+#         for batch_functions, batch_residuals in residual_test_loader:
+#             outputs = residual_model(batch_functions.unsqueeze(1))
+#             loss = residual_criterion(outputs, batch_residuals.unsqueeze(1))
+#             test_loss += loss.item()
+
+#     test_loss /= len(residual_test_loader)
+
+#     print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}')
+    
+#     train_losses2.append(train_loss)
+#     test_losses2.append(test_loss)
+
+
+# # Save the residual model
+# # Don't save the residual model right now
+# torch.save(residual_model.state_dict(), 'models/second_stage_400epochs_second_derivative_weights.pth')
+
+# print("Residual model training finished!")
+
+# %% [markdown]
+# Comment out for testing
+
+# %%
+# plot_losses(train_losses=train_losses2, test_losses=test_losses2, filename='second_stage_second_derivative_loss')
 
 # %% [markdown]
 # Something is not right about how I am training on the residuals
@@ -472,5 +471,122 @@ def plot_combined_model_output(model1, model2, filename=None):
 
 # %%
 plot_combined_model_output(model1, residual_model, filename='combined_model_output')
+
+# %% [markdown]
+# ## Calculate MSE
+
+# %%
+def calculate_combined_output(model1, model2, function_input, true_derivative):
+    # Predict the derivative from the first model
+    predicted_derivative1 = model1(function_input)
+
+    # Compute the residual and root mean squared error
+    residual = predicted_derivative1.squeeze() - true_derivative
+    rms = torch.sqrt(torch.mean(residual**2))
+
+    # Predict the derivative from the second model
+    predicted_derivative2 = model2(function_input)
+
+    # Calculate the combined model output
+    combined_model_output = predicted_derivative1 + rms * predicted_derivative2
+
+    return combined_model_output
+
+# %%
+def compute_mse(dataloader, model1, model2=None):
+    model1.eval()
+
+    mse_accumulator = 0.0
+    n_batches = 0
+
+    for x, y in dataloader:
+        x = x.unsqueeze(1)
+        y = y.unsqueeze(1)
+        if model2:
+            model_output = calculate_combined_output(model1, model2, x, y)
+        else:
+            model_output = model1(x)
+        mse = torch.mean((model_output - y) ** 2, dim=2)  # Assuming output and target are already properly shaped
+        mse_accumulator += mse.mean().item()  # Sum up MSE and convert to Python float
+        n_batches += 1
+
+    overall_mse = mse_accumulator / n_batches
+    print(f"Overall MSE over all test functions: {overall_mse}")
+    return overall_mse
+
+# Example usage:
+compute_mse(test_dataloader, model1, model2=residual_model)
+
+# %% [markdown]
+# MSE for second stage is much higher than I expect
+
+# %%
+compute_mse(test_dataloader, model1)
+
+# %% [markdown]
+# ## Spectral biases from Fourier Transform
+
+# %%
+# Get the output of the trained model
+model1.eval()
+with torch.no_grad():
+    for x, y in train_dataloader:
+        x = x.unsqueeze(1)
+        y = y.unsqueeze(1)
+        output = model1(x)
+        break  # Use the first batch for simplicity
+
+# Compute the Fourier transform of the output
+output_np = output.numpy().squeeze(1)
+output_fft = np.fft.fft(output_np, axis=1)
+
+# Compute the Fourier transform of the true function
+y_np = y.numpy().squeeze(1)
+y_fft = np.fft.fft(y_np, axis=1)
+
+# %%
+# Squeeze out unnecessary dimensions
+output_np = output_np
+y_np = y_np
+
+# Compute the Fourier transform of the outputs
+output_fft = np.fft.fft(output_np, axis=1)
+y_fft = np.fft.fft(y_np, axis=1)
+
+# Compute the magnitude of the FFT and average over all samples
+output_fft_magnitude = np.abs(output_fft).mean(axis=0)
+y_fft_magnitude = np.abs(y_fft).mean(axis=0)
+
+# Calculate the frequency bins
+num_samples = output_np.shape[-1]
+frequency_bins = np.fft.fftfreq(num_samples, d=1.0)  # Assuming unit sampling rate for simplicity
+
+# Only take the first half of the frequency bins and magnitude spectrum due to symmetry in FFT of real signals
+half_index = num_samples // 2
+frequency_bins = frequency_bins[:half_index]
+output_fft_magnitude = output_fft_magnitude[:half_index]
+y_fft_magnitude = y_fft_magnitude[:half_index]
+
+# Plotting
+plt.figure(figsize=(14, 6))
+plt.subplot(1, 2, 1)
+plt.title('Spectrum of the Learned Function')
+plt.plot(frequency_bins, output_fft_magnitude)
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Magnitude')
+plt.grid(True)
+
+plt.subplot(1, 2, 2)
+plt.title('Spectrum of the True Function')
+plt.plot(frequency_bins, y_fft_magnitude)
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Magnitude')
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+# %%
+
 
 
