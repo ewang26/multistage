@@ -78,7 +78,7 @@ num_samples = 10000
 num_points = 1000
 dataset = FourierSeriesDataset(num_samples, num_points)
 
-# Create DataLoader
+# # Create DataLoader
 batch_size = 32
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 torch.save(dataset, 'datasets/both_derivatives_dataset.pt')
@@ -88,8 +88,6 @@ torch.save(dataset, 'datasets/both_derivatives_dataset.pt')
 
 # %%
 # dataset = torch.load('derivative_dataset.pt')
-# to use the cluster dataset, use:
-# dataset = torch.load('datasets/second_derivative_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
@@ -106,6 +104,15 @@ test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False, drop_la
 # %%
 print(len(train_dataloader))
 print(len(test_dataloader))
+
+# %%
+first_batch = next(iter(train_dataloader))
+num_elements = len(first_batch)
+print(f"Number of elements in each batch: {num_elements}")
+
+# %%
+inputs = first_batch[0]  # Assuming first element is inputs
+print(f"Batch shape: {inputs.shape}")
 
 # %%
 def plot_function_and_derivative(dataloader):
@@ -249,13 +256,6 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.title('Loss over Epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    # if xmin:
-    #     plt.xlim(xmin=xmin)
-    #     min_loss = min(min(train_losses[xmin-1:]), min(test_losses[xmin-1:]))
-    #     max_loss = max(max(train_losses[xmin-1:]), max(test_losses[xmin-1:]))
-    #     plt.ylim(min_loss, max_loss)
-    # if ymax:
-    #     plt.ylim(ymax=ymax)
     plt.yscale('log')  # Set the y-axis to logarithmic scale
     plt.legend()
     plt.grid(True)
@@ -264,47 +264,55 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.show()
 
 # %%
-plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_stage_first_derivative_loss')
+plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_stage_rollout_loss')
 
 # %%
-model1.eval()  # Set the model to evaluation mode
+def plot_output(model1, save_dir='plots', filename=None): 
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    model1.eval()  # Set the model to evaluation mode
 
-train_dataloader_viz = get_random_function(shuffle=True)
-# Get a random sample from the dataloader
-dataiter = iter(train_dataloader_viz)
-function, true_derivative, true_second_derivative = next(dataiter)
+    train_dataloader_viz = get_random_function(shuffle=True)
+    # Get a random sample from the dataloader
+    dataiter = iter(train_dataloader_viz)
+    function, true_derivative, true_second_derivative = next(dataiter)
 
-# Reshape the input for the model
-function = function.unsqueeze(1)  # Add channel dimension
+    # Reshape the input for the model
+    function = function.unsqueeze(1)  # Add channel dimension
 
-# Make prediction
-with torch.no_grad():
-    predicted_derivative = model1(function)
-    predicted_second_derivative = model1(predicted_derivative)
+    # Make prediction
+    with torch.no_grad():
+        predicted_derivative = model1(function)
+        predicted_second_derivative = model1(predicted_derivative)
 
-# Convert tensors to numpy arrays for plotting
-x = torch.linspace(0, 2*torch.pi, 1000).numpy()
-function = function.squeeze().numpy()
-true_derivative = true_derivative.squeeze().numpy()
-predicted_derivative = predicted_derivative.squeeze().numpy()
+    # Convert tensors to numpy arrays for plotting
+    x = torch.linspace(0, 2*torch.pi, 1000).numpy()
+    function = function.squeeze().numpy()
+    true_derivative = true_derivative.squeeze().numpy()
+    predicted_derivative = predicted_derivative.squeeze().numpy()
 
-true_second_derivative = true_second_derivative.squeeze().numpy()
-predicted_second_derivative = predicted_second_derivative.squeeze().numpy()
+    true_second_derivative = true_second_derivative.squeeze().numpy()
+    predicted_second_derivative = predicted_second_derivative.squeeze().numpy()
 
-# Plot the results
-plt.figure(figsize=(12, 6))
-plt.plot(x, function, label='Original Function', color='blue')
-plt.plot(x, true_derivative, label='True 1st Derivative')
-plt.plot(x, predicted_derivative, label='Predicted 1st Derivative', linestyle='--')
-plt.plot(x, true_second_derivative, label='True 2nd Derivative')
-plt.plot(x, predicted_second_derivative, label='Predicted 2nd Derivative', linestyle='--')
+    # Plot the results
+    plt.figure(figsize=(12, 6))
+    plt.plot(x, function, label='Original Function', color='blue')
+    plt.plot(x, true_derivative, label='True 1st Derivative')
+    plt.plot(x, predicted_derivative, label='Predicted 1st Derivative', linestyle='--')
+    plt.plot(x, true_second_derivative, label='True 2nd Derivative')
+    plt.plot(x, predicted_second_derivative, label='Predicted 2nd Derivative', linestyle='--')
 
-plt.title('Function, True Derivatives, and Predicted Derivatives')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
-plt.grid(True)
-plt.show()
+    plt.title('Function, True Derivatives, and Predicted Derivatives')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.legend()
+    plt.grid(True)
+    save_path = os.path.join(save_dir, filename)
+    plt.savefig(save_path)  
+    plt.show()
+
+# %%
+plot_output(model1, save_dir='plots', filename='rollout_output')
 
 # %%
 smallest_five = heapq.nsmallest(5, test_losses)
@@ -314,12 +322,12 @@ smallest_five
 # ## Calculate accuracy (MSE)
 
 # %%
-import torch
-
 def compute_mse(dataloader, model1, model2=None):
     model1.eval()
 
-    mse_accumulator = 0.0
+    mse1_accumulator = 0.0
+    mse2_accumulator = 0.0
+
     n_batches = 0
 
     # Inspect the first batch to determine the number of elements
@@ -332,23 +340,37 @@ def compute_mse(dataloader, model1, model2=None):
         if num_elements == 2:
             x, y = batch
         elif num_elements == 3:
-            x, y, _ = batch
+            x, y, sec_deriv = batch
+            sec_deriv = sec_deriv[:, 10:-10]
         else:
             raise ValueError(f"Unexpected number of elements in batch: {num_elements}")
 
-        x = x.unsqueeze(1)
-        y = y.unsqueeze(1)
+        x = x[:, 10:-10].unsqueeze(1)
+        y = y[:, 10:-10].unsqueeze(1)
+        
         if model2:
             model_output = calculate_combined_output(model1, model2, x, y)
         else:
             model_output = model1(x)
-        mse = torch.mean((model_output - y) ** 2, dim=2) 
-        mse_accumulator += mse.mean().item()  
+            model_rollout = model1(model_output)
+
+        mse1 = torch.mean((model_output - y) ** 2, dim=2) 
+        mse2 = torch.mean((model_rollout - sec_deriv) ** 2, dim=2)
+
+        mse1_accumulator += mse1.mean().item()  
+        mse2_accumulator += mse2.mean().item()
         n_batches += 1
 
-    overall_mse = mse_accumulator / n_batches
-    print(f"Overall MSE over all test functions: {overall_mse}")
-    return overall_mse
+    overall_mse1 = mse1_accumulator / n_batches
+    overall_mse2 = mse2_accumulator / n_batches
+
+    print(f"Overall MSE1 over all test functions: {overall_mse1}")
+    print(f"Overall MSE2 over all test functions: {overall_mse2}")
+
+    return overall_mse1, overall_mse2
+compute_mse(test_dataloader, model1)
+
+# %%
 compute_mse(test_dataloader, model1)
 
 # %% [markdown]
@@ -426,16 +448,16 @@ def categorize_functions(dataloader, threshold):
     high_freq_functions = []
 
     # Iterate over batches in the dataloader
-    for functions, derivatives, _ in dataloader:
+    for functions, derivatives, sec_derivative in dataloader:
         for idx, function in enumerate(functions):
             fft_coeffs = np.fft.fft(function.numpy())
             low_freq_magnitude = np.sum(np.abs(fft_coeffs[:threshold]))
             high_freq_magnitude = np.sum(np.abs(fft_coeffs[threshold:]))
 
             if low_freq_magnitude > high_freq_magnitude:
-                low_freq_functions.append((function.numpy(), derivatives[idx].numpy()))
+                low_freq_functions.append((function.numpy(), derivatives[idx].numpy(), sec_derivative[idx].numpy()))
             else:
-                high_freq_functions.append((function.numpy(), derivatives[idx].numpy()))
+                high_freq_functions.append((function.numpy(), derivatives[idx].numpy(), sec_derivative[idx].numpy()))
 
     return DataLoader(low_freq_functions), DataLoader(high_freq_functions)
 
