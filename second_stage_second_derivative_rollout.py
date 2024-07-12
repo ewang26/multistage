@@ -81,13 +81,13 @@ dataset = FourierSeriesDataset(num_samples, num_points)
 # # Create DataLoader
 batch_size = 32
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-torch.save(dataset, 'datasets/both_derivatives_dataset.pt')
+torch.save(dataset, 'both_derivatives_dataset.pt')
 
 # %% [markdown]
 # ## Load previously saved dataset
 
 # %%
-# dataset = torch.load('derivative_dataset.pt')
+# dataset = torch.load('both_derivatives_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
