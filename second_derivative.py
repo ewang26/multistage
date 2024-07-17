@@ -91,7 +91,7 @@ num_points = 1000
 # %%
 # dataset = torch.load('derivative_dataset.pt')
 # to use the cluster dataset, use:
-dataset = torch.load('datasets/both_derivatives_dataset.pt')
+dataset = torch.load('both_derivatives_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
