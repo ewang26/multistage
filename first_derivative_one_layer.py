@@ -1,6 +1,3 @@
-# %% [markdown]
-# This notebook trains a one layer CNN on the first derivative
-
 # %%
 import torch
 import numpy as np
@@ -146,10 +143,10 @@ def plot_function_and_derivative(dataloader):
 # Assuming you have already created your dataset and dataloader as before
 # dataset = FourierSeriesDataset(num_samples, num_points)
 
-def get_random_function(shuffle=True):
-    return DataLoader(train_dataset, batch_size=1, shuffle=shuffle)
+def get_random_function(dataset, shuffle=True):
+    return DataLoader(dataset, batch_size=1, shuffle=shuffle)
 
-train_dataloader_viz = get_random_function(shuffle=False)
+train_dataloader_viz = get_random_function(dataset=train_dataset, shuffle=False)
 plot_function_and_derivative(train_dataloader_viz)
 
 # %% [markdown]
@@ -184,7 +181,7 @@ optimizer = optim.Adam(model1.parameters(), lr=1e-3)
 
 # %%
 # to use model from cluster, use
-# model1.load_state_dict(torch.load('models/1000_epochs_second_derivative_weights.pth'))
+model1.load_state_dict(torch.load('models/first_stage_1000epochs_first_derivative_weights.pth'))
 
 # %% [markdown]
 # ## Training loop
@@ -240,8 +237,8 @@ def model_training(num_epochs, order=None):
 
 # %%
 # Uncomment below to train and save the model
-model_training(1000, order='first')
-torch.save(model1.state_dict(), 'models/1000_epochs_first_derivative_weights.pth')
+# model_training(1000, order='first')
+# torch.save(model1.state_dict(), 'models/1000_epochs_first_derivative_weights.pth')
 
 # %%
 def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=None, filename=None, save=False):
@@ -265,17 +262,17 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.show()
 
 # %%
-plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_derivative_loss_one_layer', save=True)
+# plot_losses(train_losses=train_losses, test_losses=test_losses, filename='first_derivative_loss_one_layer', save=True)
 
 # %%
-def plot_output(model1, save_dir='plots', filename=None, save=False): 
+def plot_output(model1, order=None, save_dir='plots', filename=None, save=False): 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     
     current_date = datetime.now().strftime("%m-%d")
     model1.eval()  # Set the model to evaluation mode
 
-    train_dataloader_viz = get_random_function(shuffle=True)
+    train_dataloader_viz = get_random_function(dataset=train_dataset, shuffle=True)
     # Get a random sample from the dataloader
     dataiter = iter(train_dataloader_viz)
     function, true_derivative, true_second_derivative = next(dataiter)
@@ -285,20 +282,32 @@ def plot_output(model1, save_dir='plots', filename=None, save=False):
 
     # Make prediction
     with torch.no_grad():
-        predicted_second_derivative = model1(function)
+        if order == 1 or order == 2:
+            predicted_derivative = model1(function)
+        
+        if order == 'rollout':
+            predicted_derivative = model1(function)
+            predicted_derivative = model1(predicted_derivative)
 
     # Convert tensors to numpy arrays for plotting
     x = torch.linspace(0, 2*torch.pi, 1000).numpy()
     function = function.squeeze().numpy()
 
+    predicted_derivative = predicted_derivative.squeeze().numpy()
+
+    true_derivative = true_derivative.squeeze().numpy()
     true_second_derivative = true_second_derivative.squeeze().numpy()
-    predicted_second_derivative = predicted_second_derivative.squeeze().numpy()
 
     # Plot the results
     plt.figure(figsize=(12, 6))
+
     plt.plot(x, function, label='Original Function', color='blue')
-    plt.plot(x, true_second_derivative, label='True 2nd Derivative')
-    plt.plot(x, predicted_second_derivative, label='Predicted 2nd Derivative', linestyle='--')
+    if order == 1:
+        plt.plot(x, true_derivative, label=f'True {order} derivative')
+    if order == 2:
+        plt.plot(x, true_second_derivative, label=f'True {order} derivative')
+
+    plt.plot(x[10:-10], predicted_derivative[10:-10], label=f'Predicted {order} Derivative', linestyle='--')
 
     plt.title('Function, True Derivatives, and Predicted Derivatives')
     plt.xlabel('x')
@@ -313,10 +322,12 @@ def plot_output(model1, save_dir='plots', filename=None, save=False):
     plt.show()
 
 # %%
-plot_output(model1, save_dir='plots', filename='first_derivative_output_one_layer', save=False)
+plot_output(model1, order=1, save_dir='plots', filename='first_derivative_output_one_layer', save=False)
 
 # %% [markdown]
 # ## Calculate accuracy (MSE)
+# 
+# MSE is computed as: $\frac{1}{n} \sum (y-f(x))^2$
 
 # %%
 def calculate_combined_output(model1, model2, function_input, true_derivative):
@@ -336,57 +347,78 @@ def calculate_combined_output(model1, model2, function_input, true_derivative):
     return combined_model_output
 
 # %%
-def compute_mse(dataloader, model1, model2=None):
-    model1.eval()
+def compute_mse(dataset, model1, model2=None):
+    all_outputs = []
+    all_targets = []
 
-    mse_accumulator = 0.0
-    n_batches = 0
+    dataloader = DataLoader(dataset)
+    for function, deriv, second_deriv in dataloader:
+        function = function.unsqueeze(1)
+        deriv = deriv.unsqueeze(1)
+        second_deriv = second_deriv.unsqueeze(1)
 
-    for x, y, z in dataloader:
-        x = x.unsqueeze(1)
-        y = y.unsqueeze(1)
-        z = z.unsqueeze(1)
+        # Compute model output
         if model2:
-            model_output = calculate_combined_output(model1, model2, x, y)
+            model_output = calculate_combined_output(model1, model2, function, deriv)
+            all_targets.append(second_deriv)
         else:
-            model_output = model1(x)
-        mse = torch.mean((model_output - z) ** 2, dim=2)  # Assuming output and target are already properly shaped
-        mse_accumulator += mse.mean().item()  # Sum up MSE and convert to Python float
-        n_batches += 1
+            model_output = model1(function)
+            all_targets.append(deriv)
 
-    overall_mse = mse_accumulator / n_batches
-    print(f"Overall MSE over all test functions: {overall_mse}")
-    return overall_mse
+        # Collect outputs
+        all_outputs.append(model_output)
 
-# Example usage:
-compute_mse(test_dataloader, model1)
+    # Concatenate all collected outputs and targets
+    all_outputs = torch.cat(all_outputs, dim=0)
+    all_targets = torch.cat(all_targets, dim=0)
+
+    # Compute MSE
+    mse = torch.mean((all_outputs - all_targets) ** 2)
+    # print(f"Overall MSE over all test functions: {mse.item()}")
+    return mse.item()
+
+print(f"MSE over all functions: {compute_mse(test_dataset, model1)}")
 
 # %% [markdown]
 # ## Normalized MSE
+# 
+# NMSE is computed as: $\frac{1}{n} \frac{\sum (y-f(x))^2}{\sum y^2}$
 
 # %%
-def compute_normalized_mse(dataloader, model1, model2=None):
-    model1.eval()
+def compute_nmse(dataset, model1, model2=None):
+    all_outputs = []
+    all_targets = []
 
-    mse_accumulator = 0.0
-    n_batches = 0
+    dataloader = DataLoader(dataset)
+    for function, deriv, second_deriv in dataloader:
+        function = function.unsqueeze(1)
+        deriv = deriv.unsqueeze(1)
+        second_deriv = second_deriv.unsqueeze(1)
 
-    for x, y, z in dataloader:
-        x = x.unsqueeze(1)
-        y = y.unsqueeze(1)
-        z = z.unsqueeze(1)
+        # Compute model output
         if model2:
-            model_output = calculate_combined_output(model1, model2, x, y)
+            model_output = calculate_combined_output(model1, model2, function, deriv)
+            all_targets.append(second_deriv)
         else:
-            model_output = model1(x)
-        mse = torch.mean((model_output - z) ** 2 / (z ** 2), dim=2)  # Assuming output and target are already properly shaped
-        mse_accumulator += mse.mean().item()  # Sum up MSE and convert to Python float
-        n_batches += 1
+            model_output = model1(function)
+            all_targets.append(deriv)
 
-    overall_mse = mse_accumulator / n_batches
-    print(f"Normalized MSE over all test functions: {overall_mse}")
-    return overall_mse
-compute_mse(test_dataloader, model1)
+        # Collect outputs
+        all_outputs.append(model_output)
+
+    # Concatenate all collected outputs and targets
+    all_outputs = torch.cat(all_outputs, dim=0)
+    all_targets = torch.cat(all_targets, dim=0)
+
+    # Compute MSE
+    mse = torch.mean((all_outputs - all_targets) ** 2)
+    normalizing_factor = torch.mean(all_targets ** 2)
+
+    nmse = mse / normalizing_factor
+
+    # print(f"Overall NMSE over all test functions: {nmse.item()}")
+    return nmse.item()
+print(f"NMSE over all functions: {compute_nmse(test_dataset, model1)}")
 
 # %% [markdown]
 # ## Spectral biases from Fourier Transform
@@ -417,8 +449,8 @@ def categorize_functions(dataloader):
     
     # Create new DataLoaders, excluding the median frequency from the data
     # Each dataloader contains the function, deriv, and second deriv
-    low_freq_dataloader = DataLoader([(f[0], f[1], f[2]) for f in low_freq_dataset])
-    high_freq_dataloader = DataLoader([(f[0], f[1], f[2]) for f in high_freq_dataset])
+    low_freq_dataloader = [(f[0], f[1], f[2]) for f in low_freq_dataset]
+    high_freq_dataloader = [(f[0], f[1], f[2]) for f in high_freq_dataset]
     
     return low_freq_dataloader, high_freq_dataloader
 
@@ -431,11 +463,80 @@ print(f"Low frequency dataset size: {len(low_freq_dataset)}")
 print(f"High frequency dataset size: {len(high_freq_dataset)}")
 
 # %%
-low_freq_mse = compute_mse(low_freq_dataset, model1)
-low_freq_nmse = compute_normalized_mse(low_freq_dataset, model1)
+print(f"MSE over low freq functions: {compute_mse(low_freq_dataset, model1)}")
+print(f"NMSE over low freq functions: {compute_nmse(low_freq_dataset, model1)}")
 
 # %%
-high_freq_mse = compute_mse(high_freq_dataset, model1)
-high_freq_nmse = compute_normalized_mse(high_freq_dataset, model1)
+print(f"MSE over high freq functions: {compute_mse(high_freq_dataset, model1)}")
+print(f"NMSE over high freq functions: {compute_nmse(high_freq_dataset, model1)}")
+
+# %% [markdown]
+# ### Plotting errors
+
+# %%
+def plot_difference(model1, dataset, save_dir='plots', filename=None, save=False):
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    model1.eval()  # Set the model to evaluation mode
+
+    def plot_sliced(x, y, label, linestyle='-'):
+        plt.plot(x[10:-10], y[10:-10], label=label, linestyle=linestyle)
+
+    plt.figure(figsize=(12, 12))  # Adjust figure size for a 2x2 grid
+    
+    for i in range(1, 5):  # Loop over four different functions
+        train_dataloader_viz = get_random_function(dataset, shuffle=True)
+        dataiter = iter(train_dataloader_viz)
+        function, true_derivative, true_second_derivative = next(dataiter)
+
+        function = function.unsqueeze(1)  # Add channel dimension
+
+        # Make prediction
+        with torch.no_grad():
+            predicted_derivative = model1(function)
+            first_deriv_diff = true_derivative - predicted_derivative
+
+            predicted_second_derivative = model1(predicted_derivative)
+            second_deriv_diff = true_second_derivative - predicted_second_derivative
+
+        # Convert tensors to numpy arrays for plotting
+        x = torch.linspace(0, 2*torch.pi, 1000).numpy()
+        function = function.squeeze().numpy()
+        true_derivative = true_derivative.squeeze().numpy()
+        true_second_derivative = true_second_derivative.squeeze().numpy()
+        
+        first_deriv_diff = first_deriv_diff.squeeze().numpy()
+        second_deriv_diff = second_deriv_diff.squeeze().numpy()
+
+        plt.subplot(2, 2, i)  # Adjust subplot position
+        plot_sliced(x, function, '$u$')
+        plot_sliced(x, first_deriv_diff, "$u'_g - u'_{\\theta}$", linestyle='--')
+        # plot_sliced(x, true_derivative, "$u'_g$")
+        # plot_sliced(x, true_second_derivative, "$u''_g$", linestyle='--')
+
+        plt.title(f'Difference for Function {i}')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+        plt.grid(True)
+
+        mse = np.mean((first_deriv_diff) ** 2)
+        nmse = np.mean((first_deriv_diff) ** 2 / (true_derivative ** 2))
+        nmse = mse / np.mean(true_derivative ** 2)
+
+        print(f"MSE for function {i} is: {mse}")        
+        print(f"NMSE for function {i} is: {nmse}\n")        
+
+    if save:
+        save_path = os.path.join(save_dir, filename if filename else 'multi_plot.png')
+        plt.savefig(save_path)
+    plt.show()
+
+
+# %%
+plot_difference(model1, dataset=low_freq_dataset, save_dir='plots', filename='low_freq_differences', save=False)
+
+# %%
+plot_difference(model1, dataset=high_freq_dataset, save_dir='plots', filename='high_freq_differences', save=False)
 
 
