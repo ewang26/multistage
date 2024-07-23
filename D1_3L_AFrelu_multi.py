@@ -93,10 +93,10 @@ num_points = 1000
 
 # %%
 # # When using the workstation:
-dataset = torch.load('datasets/both_derivatives_dataset.pt')
+# dataset = torch.load('datasets/both_derivatives_dataset.pt')
 
 # # When using the cluster:
-# dataset = torch.load('both_derivatives_dataset.pt')
+dataset = torch.load('both_derivatives_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
