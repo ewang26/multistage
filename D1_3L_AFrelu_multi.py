@@ -14,6 +14,9 @@ import os
 from datetime import datetime
 
 # %%
+save = True
+
+# %%
 torch.cuda.is_available()
 
 # %%
@@ -184,7 +187,7 @@ optimizer = optim.Adam(model1.parameters(), lr=1e-3)
 
 # %%
 # to use model from cluster, use
-model1.load_state_dict(torch.load('models/first_stage_1000epochs_weights.pth'))
+# model1.load_state_dict(torch.load('models/first_stage_1000epochs_weights.pth'))
 
 # %% [markdown]
 # ## Training loop
@@ -240,11 +243,14 @@ def model_training(num_epochs, order=None):
 
 # %%
 # Uncomment below to train and save the model
-# model_training(10, order='first')
-# torch.save(model1.state_dict(), 'models/E1000_D1_3L_AFrelu_1S.pth')
+model_training(1000, order='first')
+torch.save(model1.state_dict(), 'models/E1000_D1_3L_AFrelu_1S.pth')
 
 # %%
 def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=None, filename=None, save=False):
+    if not train_losses:
+        return
+    
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     current_date = datetime.now().strftime("%m-%d")
@@ -265,7 +271,7 @@ def plot_losses(train_losses, test_losses, save_dir='plots', xmin=None, ymax=Non
     plt.show()
 
 # %%
-# plot_losses(train_losses=train_losses, test_losses=test_losses, filename='D1_3L_AFrelu_1S_loss', save=True)
+plot_losses(train_losses=train_losses, test_losses=test_losses, filename='D1_3L_AFrelu_1S_loss', save=True)
 
 # %%
 def plot_output(model1, order=None, save_dir='plots', filename=None, save=False): 
@@ -325,7 +331,7 @@ def plot_output(model1, order=None, save_dir='plots', filename=None, save=False)
     plt.show()
 
 # %%
-plot_output(model1, order=1, save_dir='plots', filename='D1_3L_AFrelu_1S_output', save=True)
+plot_output(model1, order=1, save_dir='plots', filename='D1_3L_AFrelu_1S_output', save=save)
 
 # %% [markdown]
 # ## Calculate accuracy (MSE)
@@ -481,6 +487,8 @@ def plot_difference(model1, dataset, save_dir='plots', filename=None, save=False
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     model1.eval()  # Set the model to evaluation mode
+    
+    current_date = datetime.now().strftime("%m-%d")
 
     def plot_sliced(x, y, label, linestyle='-'):
         plt.plot(x[10:-10], y[10:-10], label=label, linestyle=linestyle)
@@ -528,18 +536,91 @@ def plot_difference(model1, dataset, save_dir='plots', filename=None, save=False
 
         print(f"MSE for function {i} is: {mse}")        
         print(f"NMSE for function {i} is: {nmse}\n")        
-
+    
     if save:
+        filename = f"{filename}_{current_date}.png"
         save_path = os.path.join(save_dir, filename if filename else 'multi_plot.png')
         plt.savefig(save_path)
     plt.show()
 
 
 # %%
-plot_difference(model1, dataset=low_freq_dataset, save_dir='plots', filename='D1_3L_AFrelu_1S_lowf', save=True)
+def plot_difference2(model1, dataset, save_dir='plots', filename=None, save=False):
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    model1.eval()  # Set the model to evaluation mode
+
+    def plot_sliced(x, y, label, linestyle='-'):
+        plt.plot(x[10:-10], y[10:-10], label=label, linestyle=linestyle)
+
+    current_date = datetime.now().strftime("%m-%d")
+
+    plt.figure(figsize=(12, 6*4))  # Adjust figure size for side-by-side plots
+    
+    for i in range(1, 5):  # Loop over four different functions
+        train_dataloader_viz = get_random_function(dataset, shuffle=True)
+        dataiter = iter(train_dataloader_viz)
+        function, true_derivative, true_second_derivative = next(dataiter)
+
+        function = function.unsqueeze(1)  # Add channel dimension
+
+        # Make prediction
+        with torch.no_grad():
+            predicted_derivative = model1(function)
+            first_deriv_diff = true_derivative - predicted_derivative
+
+            predicted_second_derivative = model1(predicted_derivative)
+            second_deriv_diff = true_second_derivative - predicted_second_derivative
+
+        # Convert tensors to numpy arrays for plotting
+        x = torch.linspace(0, 2*torch.pi, 1000).numpy()
+        function = function.squeeze().numpy()
+        true_derivative = true_derivative.squeeze().numpy()
+        true_second_derivative = true_second_derivative.squeeze().numpy()
+        
+        first_deriv_diff = first_deriv_diff.squeeze().numpy()
+        second_deriv_diff = second_deriv_diff.squeeze().numpy()
+
+        # Plot original function and its derivative
+        plt.subplot(4, 2, 2*i-1)  # Adjust subplot position for original function
+        plot_sliced(x, function, '$u$', linestyle='-')
+        # plot_sliced(x, true_derivative, "$u'$", linestyle='--')
+        plt.title(f'Function {i} and its derivative')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+        plt.grid(True)
+
+        # Plot difference (error)
+        plt.subplot(4, 2, 2*i)  # Adjust subplot position for difference plot
+        plot_sliced(x, first_deriv_diff, "$u'_g - u'_{\\theta}$", linestyle='--')
+        plt.title(f'Error in derivative for Function {i}')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+        plt.grid(True)
+
+        mse = np.mean((first_deriv_diff) ** 2)
+        nmse = mse / np.mean(true_derivative ** 2)
+
+        print(f"MSE for function {i} is: {mse}")        
+        print(f"NMSE for function {i} is: {nmse}\n")        
+
+    if save:
+        filename = f"{filename}_{current_date}.png"
+        save_path = os.path.join(save_dir, filename if filename else 'multi_plot.png')
+        plt.savefig(save_path)
+    plt.show()
+
 
 # %%
-plot_difference(model1, dataset=high_freq_dataset, save_dir='plots', filename='D1_3L_AFrelu_1S_highf', save=True)
+plot_difference2(model1, dataset=low_freq_dataset, save_dir='plots', filename='D1_3L_AFrelu_1S_lowf_separate', save=save)
+
+# %%
+plot_difference(model1, dataset=low_freq_dataset, save_dir='plots', filename='D1_3L_AFrelu_1S_lowf', save=save)
+
+# %%
+plot_difference(model1, dataset=high_freq_dataset, save_dir='plots', filename='D1_3L_AFrelu_1S_highf', save=save)
 
 # %% [markdown]
 # ## Second stage training
@@ -655,8 +736,11 @@ def second_stage_model_training(model, num_epochs, order=None):
 second_stage_train_losses, second_stage_test_losses = second_stage_model_training(second_stage_model, 1000, order='first')
 torch.save(second_stage_model.state_dict(), 'models/E1000_D1_3L_AFrelu_2S.pth')
 
+# %% [markdown]
+# Need to uncomment these cells (above and below) later
+
 # %%
-plot_losses(train_losses=second_stage_train_losses, test_losses=second_stage_test_losses, filename='second_stage_loss', save=True)
+plot_losses(train_losses=second_stage_train_losses, test_losses=second_stage_test_losses, filename='second_stage_loss', save=save)
 
 # %%
 print(f"Second stage MSE over all functions: {compute_mse(test_dataset, model1, second_stage_model)}")
