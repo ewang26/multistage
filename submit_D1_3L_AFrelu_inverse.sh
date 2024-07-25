@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=8:00:00
 #SBATCH --gpus=1
+#SBATCH --constraint=GPU_SKU:A100_SXM4
 #SBATCH --mem-per-cpu=10G
 
 module load python/3.9.0

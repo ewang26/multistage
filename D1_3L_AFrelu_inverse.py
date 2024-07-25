@@ -869,10 +869,10 @@ def inverse_model_training(model, train_dataloader, test_dataloader, num_epochs,
 
 # %%
 train_losses, test_losses = inverse_model_training(inverse_model, function_derivative_pairs_train,\
-    function_derivative_pairs_test, 1000, order='first')
+    function_derivative_pairs_test, 3000, order='first')
 
 # %%
-torch.save(inverse_model.state_dict(), 'models/E1000_D1_3L_AFrelu_inverse.pth')
+torch.save(inverse_model.state_dict(), 'models/E3000_D1_3L_AFrelu_inverse.pth')
 
 # %%
 def compute_mse(dataloader, model):
