@@ -17,7 +17,7 @@ from datetime import datetime
 
 # %%
 save = True
-cluster = True
+cluster = False
 
 # %%
 torch.cuda.is_available()
@@ -88,11 +88,11 @@ num_samples = 10000
 num_points = 1000
 
 # Uncomment below to create dataset
-# dataset = FourierSeriesDataset(num_samples, num_points)
+dataset = FourierSeriesDataset(num_samples, num_points)
 
-# batch_size = 32
-# dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-# torch.save(dataset, 'datasets/both_derivatives_dataset.pt')
+batch_size = 32
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+torch.save(dataset, 'datasets/both_derivatives_dataset.pt')
 
 # %% [markdown]
 # ## Load previously saved dataset
