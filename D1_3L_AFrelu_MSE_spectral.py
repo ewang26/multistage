@@ -621,9 +621,9 @@ model2 = SimpleCNN()
 
 # %%
 train_losses, test_losses = model_training(model2, 200, order='first')
-torch.save(model2.state_dict(), 'models/E200_D1_3L_AFrelu_SB.pth')
-plot_losses(train_losses=train_losses, test_losses=test_losses, save_dir='plots/spectral_bias', filename='E200_D1_3L_AFrelu_loss', save=save)
-plot_output(model2, order=1, save_dir='plots/spectral_bias', filename='E200_D1_3L_AFrelu_output', save=save)
+torch.save(model2.state_dict(), 'models/E200_D1_3L_AFrelu_MSE_SB.pth')
+plot_losses(train_losses=train_losses, test_losses=test_losses, save_dir='plots/spectral_bias', filename='E200_D1_3L_AFrelu_MSE_loss', save=save)
+plot_output(model2, order=1, save_dir='plots/spectral_bias', filename='E200_D1_3L_AFrelu_MSE_output', save=save)
 
 # %%
 print("Epochs 0-200:\n")
@@ -643,9 +643,9 @@ print(f"NMSE over all functions: {compute_nmse(test_dataset, model2)}")
 
 # %%
 train_losses, test_losses = model_training(model2, 400, order='first')
-torch.save(model2.state_dict(), 'models/E600_D1_3L_AFrelu_SB.pth')
-plot_losses(train_losses=train_losses, test_losses=test_losses, save_dir='plots/spectral_bias', filename='E600_D1_3L_AFrelu_loss', save=save)
-plot_output(model2, order=1, save_dir='plots/spectral_bias', filename='E600_D1_3L_AFrelu_output', save=save)
+torch.save(model2.state_dict(), 'models/E600_D1_3L_AFrelu_MSE_SB.pth')
+plot_losses(train_losses=train_losses, test_losses=test_losses, save_dir='plots/spectral_bias', filename='E600_D1_3L_AFrelu_MSE_loss', save=save)
+plot_output(model2, order=1, save_dir='plots/spectral_bias', filename='E600_D1_3L_AFrelu_MSE_output', save=save)
 
 # %%
 print("Epochs 200-600:\n")
@@ -665,9 +665,9 @@ print(f"NMSE over all functions: {compute_nmse(test_dataset, model2)}")
 
 # %%
 train_losses, test_losses = model_training(model2, 400, order='first')
-torch.save(model2.state_dict(), 'models/E1000_D1_3L_AFrelu_SB.pth')
-plot_losses(train_losses=train_losses, test_losses=test_losses, save_dir='plots/spectral_bias', filename='E1000_D1_3L_AFrelu_loss', save=save)
-plot_output(model2, order=1, save_dir='plots/spectral_bias', filename='E1000_D1_3L_AFrelu_output', save=save)
+torch.save(model2.state_dict(), 'models/E1000_D1_3L_AFrelu_MSE_SB.pth')
+plot_losses(train_losses=train_losses, test_losses=test_losses, save_dir='plots/spectral_bias', filename='E1000_D1_3L_AFrelu_MSE_loss', save=save)
+plot_output(model2, order=1, save_dir='plots/spectral_bias', filename='E1000_D1_3L_AFrelu_MSE_output', save=save)
 
 # %%
 print("Epochs 600-1000:\n")
