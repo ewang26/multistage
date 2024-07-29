@@ -1099,7 +1099,7 @@ def continued_training(model, num_epochs, train_dataloader, test_dataloader, ord
     return train_losses, test_losses
 
 # %%
-train_losses, test_losses = continued_training(continued_model1, 5, residue_train_dataloader,\
+train_losses, test_losses = continued_training(continued_model1, 1000, residue_train_dataloader,\
     residue_test_dataloader, order=1)
 
 # %%
