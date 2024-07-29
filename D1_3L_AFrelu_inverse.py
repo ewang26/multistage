@@ -963,6 +963,6 @@ def plot_output(model, order=None, save_dir='plots', filename=None, save=False):
     plt.show()
 
 # %%
-plot_output(inverse_model, order=1, save_dir='inverse/plots', filename='D1_3L_AFrelu_1S_inverse_output', save=save)
+plot_output(inverse_model, order=1, save_dir='plots/inverse', filename='D1_3L_AFrelu_1S_inverse_output', save=save)
 
 
