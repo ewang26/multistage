@@ -94,7 +94,7 @@ num_points = 1000
 
 # %% [markdown]
 # ## Load previously saved dataset
-
+dataset = torch.load('datasets/both_derivatives_dataset.pt')
 # %%
 from torch.utils.data import random_split
 total_size = len(dataset)
