@@ -17,8 +17,6 @@ from datetime import datetime
 
 # %%
 save = True
-cluster = True
-
 # %%
 torch.cuda.is_available()
 
@@ -96,12 +94,6 @@ num_points = 1000
 
 # %% [markdown]
 # ## Load previously saved dataset
-
-# %%
-if cluster:
-    dataset = torch.load('both_derivatives_dataset.pt')
-else:
-    dataset = torch.load('datasets/both_derivatives_dataset.pt')
 
 # %%
 from torch.utils.data import random_split
