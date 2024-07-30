@@ -14,4 +14,4 @@
 module load python/3.9.0
 
 source ../venvs/sciml3/bin/activate
-python3 D1_3L_AFrelu_continued_v3.py
+python3 D1_3L_AFrelu_continued_v4.py
