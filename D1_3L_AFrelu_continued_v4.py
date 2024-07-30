@@ -208,11 +208,10 @@ def model_training(model, num_epochs, lr_factor=1, order=None):
     train_losses = []
     test_losses = []
 
-    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-
-    lr = 1e-3 / lr_factor
+    lr = 1e-3
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
     for epoch in range(num_epochs):
         model.train()
