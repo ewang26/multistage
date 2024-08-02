@@ -29,7 +29,7 @@ save = True
 # %%
 # These are both placeholders
 num_epochs = 10
-model_name = 'placeholder'
+model_name = None
 
 # %%
 # Parse command-line arguments
@@ -173,7 +173,7 @@ high_freq_dataset = HighFrequencyFourierDataset(num_samples, num_points, min_fre
 
 # Create DataLoaders
 batch_size = 32
-general_dataloader = DataLoader(general_dataset, batch_size=batch_size, shuffle=True)
+general_dataloader = DataLoader(general_freq_dataset, batch_size=batch_size, shuffle=True)
 low_freq_dataloader = DataLoader(low_freq_dataset, batch_size=batch_size, shuffle=True)
 high_freq_dataloader = DataLoader(high_freq_dataset, batch_size=batch_size, shuffle=True)
 
@@ -193,7 +193,7 @@ test_size = total_size - train_size
 generator = torch.Generator().manual_seed(seed)
 train_dataset_g, test_dataset_g = random_split(dataset_g, [train_size, test_size], generator=generator)
 train_dataloader_g = DataLoader(train_dataset_g, batch_size=32, shuffle=True, drop_last=True)
-test_dataloader_g = DataLoader(test_dataset_l, batch_size=32, shuffle=False, drop_last=True)
+test_dataloader_g = DataLoader(test_dataset_g, batch_size=32, shuffle=False, drop_last=True)
 
 # %% [markdown]
 # Low frequency dataset
@@ -520,7 +520,11 @@ def compute_mse(dataloader, model):
 
 # %%
 print(f"MSE over low freq train functions: {compute_mse(train_dataloader_l, f0)[0]}")
-print(f"NMSE over low freq train functions: {compute_mse(train_dataloader_l, f0)[1]}")
+print(f"NMSE over low freq train functions: {compute_mse(train_dataloader_l, f0)[1]}\n")
+
+print(f"MSE over low freq test functions: {compute_mse(test_dataloader_l, f0)[0]}")
+print(f"NMSE over low freq test functions: {compute_mse(test_dataloader_l, f0)[1]}")
+
 
 # %% [markdown]
 # Loss over general frequency functions
