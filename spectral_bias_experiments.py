@@ -167,7 +167,7 @@ class GeneralFrequencyFourierDataset(BaseFourierDataset):
 num_samples = 5000
 num_points = 1000
 
-general_freq_dataset = GeneralFourierDataset(num_samples, num_points)
+general_freq_dataset = GeneralFrequencyFourierDataset(num_samples, num_points)
 low_freq_dataset = LowFrequencyFourierDataset(num_samples, num_points, max_freq=5)
 high_freq_dataset = HighFrequencyFourierDataset(num_samples, num_points, min_freq=20, max_freq=30)
 
