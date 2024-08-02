@@ -14,4 +14,4 @@
 module load python/3.9.0
 
 source ../venvs/sciml3/bin/activate
-python3 spectral_bias_experiments.py --epochs 500 --model_name 'E500'
+python3 spectral_bias_experiments.py --epochs 500 --model_name 'f0'

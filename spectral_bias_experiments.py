@@ -15,9 +15,25 @@ import torch.optim as optim
 import heapq
 import os
 from datetime import datetime
+import argparse
 
+# %% [markdown]
+# Set save to True if you want to save plots
+
+# %%
+save = True
+
+# %% [markdown]
+# Only for python script: uncomment if running on cluster
+
+# %%
+# These are both placeholders
+num_epochs = 10
+model_name = 'placeholder'
+
+# %%
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description='Train a neural network model')
+parser = argparse.ArgumentParser(description='Training model')
 parser.add_argument('--epochs', type=int, default=1000, help='Number of training epochs')
 parser.add_argument('--model_name', type=str, default='model', help='Name of the saved model')
 args = parser.parse_args()
@@ -39,12 +55,6 @@ seed = 42
 torch.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
-
-# %% [markdown]
-# Set save to True if you want to save plots
-
-# %%
-save = True
 
 # %% [markdown]
 # Base dataset class
@@ -91,29 +101,6 @@ class LowFrequencyFourierDataset(BaseFourierDataset):
 
             # Compute function values
             y = self.complex_fourier_series(self.x, c)
-            y = y - y[0]  # Ensure f(0) = 0
-            functions.append(y.detach().numpy())
-
-            # Compute derivatives
-            dy_dx = torch.autograd.grad(y, self.x, grad_outputs=torch.ones_like(y), create_graph=True)[0]
-            first_derivatives.append(dy_dx.detach().numpy())
-
-        return np.array(functions), np.array(first_derivatives)
-
-class LowFrequencyFourierDataset(BaseFourierDataset):
-    def __init__(self, num_samples, num_points, max_freq=5):
-        super().__init__(num_samples, num_points, max_freq)
-
-    def generate_data(self):
-        functions, first_derivatives = [], []
-
-        for _ in range(self.num_samples):
-            # Generate coefficients only for low frequencies (1 to max_freq)
-            c = torch.zeros(2*self.max_freq+1, dtype=torch.complex64)
-            c[self.max_freq-self.max_freq:self.max_freq+self.max_freq+1] = torch.complex(torch.randn(2*self.max_freq+1), torch.randn(2*self.max_freq+1))
-
-            # Compute function values
-            y = self.complex_fourier_series(self.x, c)
             # y = y - y[0]  # Ensure f(0) = 0
             functions.append(y.detach().numpy())
 
@@ -124,7 +111,7 @@ class LowFrequencyFourierDataset(BaseFourierDataset):
         return np.array(functions), np.array(first_derivatives)
 
 class HighFrequencyFourierDataset(BaseFourierDataset):
-    def __init__(self, num_samples, num_points, min_freq=20, max_freq=30):
+    def __init__(self, num_samples, num_points, min_freq=15, max_freq=20):
         self.min_freq = min_freq
         super().__init__(num_samples, num_points, max_freq)
 
@@ -153,20 +140,60 @@ class HighFrequencyFourierDataset(BaseFourierDataset):
 
 
 # %%
+class GeneralFrequencyFourierDataset(BaseFourierDataset):
+    def __init__(self, num_samples, num_points, max_freq=random.randrange(20)):
+        super().__init__(num_samples, num_points, max_freq)
+
+    def generate_data(self):
+        functions, first_derivatives = [], []
+
+        for _ in range(self.num_samples):
+            # Generate coefficients only for low frequencies (1 to max_freq)
+            c = torch.zeros(2*self.max_freq+1, dtype=torch.complex64)
+            c[self.max_freq-self.max_freq:self.max_freq+self.max_freq+1] = torch.complex(torch.randn(2*self.max_freq+1), torch.randn(2*self.max_freq+1))
+
+            # Compute function values
+            y = self.complex_fourier_series(self.x, c)
+            # y = y - y[0]  # Ensure f(0) = 0
+            functions.append(y.detach().numpy())
+
+            # Compute derivatives
+            dy_dx = torch.autograd.grad(y, self.x, grad_outputs=torch.ones_like(y), create_graph=True)[0]
+            first_derivatives.append(dy_dx.detach().numpy())
+
+        return np.array(functions), np.array(first_derivatives)
+
+# %%
 num_samples = 5000
 num_points = 1000
 
+general_freq_dataset = GeneralFourierDataset(num_samples, num_points)
 low_freq_dataset = LowFrequencyFourierDataset(num_samples, num_points, max_freq=5)
 high_freq_dataset = HighFrequencyFourierDataset(num_samples, num_points, min_freq=20, max_freq=30)
 
 # Create DataLoaders
 batch_size = 32
+general_dataloader = DataLoader(general_dataset, batch_size=batch_size, shuffle=True)
 low_freq_dataloader = DataLoader(low_freq_dataset, batch_size=batch_size, shuffle=True)
 high_freq_dataloader = DataLoader(high_freq_dataset, batch_size=batch_size, shuffle=True)
 
 # Save datasets
+torch.save(general_freq_dataset, 'datasets/general_freq_dataset.pt')
 torch.save(low_freq_dataset, 'datasets/low_freq_dataset.pt')
 torch.save(high_freq_dataset, 'datasets/high_freq_dataset.pt')
+
+# %% [markdown]
+# General frequency dataset
+
+# %%
+dataset_g = torch.load('datasets/general_freq_dataset.pt')
+total_size = len(dataset_g)
+train_size = int(0.8 * total_size)
+test_size = total_size - train_size
+generator = torch.Generator().manual_seed(seed)
+train_dataset_g, test_dataset_g = random_split(dataset_g, [train_size, test_size], generator=generator)
+train_dataloader_g = DataLoader(train_dataset_g, batch_size=32, shuffle=True, drop_last=True)
+test_dataloader_g = DataLoader(test_dataset_l, batch_size=32, shuffle=False, drop_last=True)
 
 # %% [markdown]
 # Low frequency dataset
@@ -179,7 +206,7 @@ test_size = total_size - train_size
 generator = torch.Generator().manual_seed(seed)
 train_dataset_l, test_dataset_l = random_split(dataset_l, [train_size, test_size], generator=generator)
 train_dataloader_l = DataLoader(train_dataset_l, batch_size=32, shuffle=True, drop_last=True)
-test_dataloader_l = DataLoader(test_dataset_l, batch_size=32, shuffle=True, drop_last=True)
+test_dataloader_l = DataLoader(test_dataset_l, batch_size=32, shuffle=False, drop_last=True)
 
 # %% [markdown]
 # High frequency dataset
@@ -192,7 +219,7 @@ test_size = total_size - train_size
 generator = torch.Generator().manual_seed(seed)
 train_dataset_h, test_dataset_h = random_split(dataset_h, [train_size, test_size], generator=generator)
 train_dataloader_h = DataLoader(train_dataset_h, batch_size=32, shuffle=True, drop_last=True)
-test_dataloader_h = DataLoader(test_dataset_h, batch_size=32, shuffle=True, drop_last=True)
+test_dataloader_h = DataLoader(test_dataset_h, batch_size=32, shuffle=False, drop_last=True)
 
 # %% [markdown]
 # ## Plot a function
@@ -218,7 +245,7 @@ def plot_function_and_derivative(dataloader):
     plt.plot(x, function, label='Function', color='blue')
     plt.plot(x, derivative, label='First Derivative', linestyle='--')
     
-    plt.title('Low freq function and derivative')
+    plt.title('Function and derivative')
     plt.xlabel('x')
     plt.ylabel('y')
     plt.legend()
@@ -230,6 +257,13 @@ def get_random_function(dataset, shuffle=True):
     return DataLoader(dataset, batch_size=1, shuffle=shuffle)
 
 train_dataloader_viz = get_random_function(dataset=train_dataset_l, shuffle=True)
+plot_function_and_derivative(train_dataloader_viz)
+
+# %% [markdown]
+# General freq function
+
+# %%
+train_dataloader_viz = get_random_function(dataset=train_dataset_g, shuffle=True)
 plot_function_and_derivative(train_dataloader_viz)
 
 # %% [markdown]
@@ -278,7 +312,8 @@ criterion = nn.MSELoss()
 # %%
 train_losses, test_losses = [], []
 
-def model_training(model, num_epochs, lr_factor=1, optimizer_pth=None, order=None):
+def model_training(model, train_dataloader, test_dataloader, num_epochs,\
+    lr_factor=1, optimizer_pth=None, order=None):
     train_losses = []
     test_losses = []
 
@@ -336,8 +371,9 @@ def model_training(model, num_epochs, lr_factor=1, optimizer_pth=None, order=Non
     return train_losses, test_losses
 
 # %%
-train_losses, test_losses = model_training(model1, num_epochs, order='first')
-torch.save(model1.state_dict(), f'models/{model_name}.pth')
+train_losses, test_losses = model_training(f0, train_dataloader_g, test_dataloader_g,\
+    num_epochs, order='first')
+torch.save(f0.state_dict(), f'models/{model_name}_E{num_epochs}.pth')
 
 # %% [markdown]
 # ## Miscellaneous plotting functions
@@ -425,10 +461,25 @@ def plot_output(model1, dataset, order=None, save_dir='plots', filename=None, sa
 
 # %%
 plot_losses(train_losses=train_losses, test_losses=test_losses,\
-    save_dir='plots/inverse', filename=f'f0_{model_name}_loss', save=save)
+    save_dir='plots/spectral_bias', filename=f'{model_name}_E{num_epochs}_loss', save=save)
+
+# %% [markdown]
+# Low frequency output
 
 # %%
-plot_output(f0, dataset=train_dataset_l, order=1, save_dir='plots/multistage', filename=f'f0_{model_name}_output', save=save)
+plot_output(f0, dataset=train_dataset_l, order=1, save_dir='plots/spectral_bias', filename=f'{model_name}_E{num_epochs}_lf_output', save=save)
+
+# %% [markdown]
+# General frequency output
+
+# %%
+plot_output(f0, dataset=train_dataset_g, order=1, save_dir='plots/spectral_bias', filename=f'{model_name}_E{num_epochs}_gf_output', save=save)
+
+# %% [markdown]
+# High frequency output
+
+# %%
+plot_output(f0, dataset=train_dataset_h, order=1, save_dir='plots/spectral_bias', filename=f'{model_name}_E{num_epochs}_hf_output', save=save)
 
 # %% [markdown]
 # ## Metrics (MSE and NMSE)
@@ -464,7 +515,31 @@ def compute_mse(dataloader, model):
 
     return mse.item(), nmse.item()
 
-print(f"MSE over all test functions: {compute_mse(train_dataloader_l, f0)[0]}")
-print(f"NMSE over all test functions: {compute_mse(train_dataloader_l, f0)[1]}")
+# %% [markdown]
+# Loss over low frequency functions
+
+# %%
+print(f"MSE over low freq train functions: {compute_mse(train_dataloader_l, f0)[0]}")
+print(f"NMSE over low freq train functions: {compute_mse(train_dataloader_l, f0)[1]}")
+
+# %% [markdown]
+# Loss over general frequency functions
+
+# %%
+print(f"MSE over general freq train functions: {compute_mse(train_dataloader_g, f0)[0]}")
+print(f"NMSE over general freq train functions: {compute_mse(train_dataloader_g, f0)[1]}\n")
+
+print(f"MSE over general freq test functions: {compute_mse(test_dataloader_g, f0)[0]}")
+print(f"NMSE over general freq test functions: {compute_mse(test_dataloader_g, f0)[1]}\n")
+
+# %% [markdown]
+# Loss over high frequency functions
+
+# %%
+print(f"MSE over high freq train functions: {compute_mse(train_dataloader_h, f0)[0]}")
+print(f"NMSE over high freq train functions: {compute_mse(train_dataloader_h, f0)[1]}\n")
+
+print(f"MSE over high freq test functions: {compute_mse(test_dataloader_h, f0)[0]}")
+print(f"NMSE over high freq test functions: {compute_mse(test_dataloader_h, f0)[1]}\n")
 
 
