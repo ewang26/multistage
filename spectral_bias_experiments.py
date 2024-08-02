@@ -153,7 +153,7 @@ class HighFrequencyFourierDataset(BaseFourierDataset):
 
 
 # %%
-num_samples = 100
+num_samples = 5000
 num_points = 1000
 
 low_freq_dataset = LowFrequencyFourierDataset(num_samples, num_points, max_freq=5)
@@ -425,10 +425,10 @@ def plot_output(model1, dataset, order=None, save_dir='plots', filename=None, sa
 
 # %%
 plot_losses(train_losses=train_losses, test_losses=test_losses,\
-    save_dir='plots/inverse', filename='f0_E1000_loss', save=save)
+    save_dir='plots/inverse', filename=f'f0_{model_name}_loss', save=save)
 
 # %%
-plot_output(f0, dataset=train_dataset_l, order=1, save_dir='plots/multistage', filename='f0_E1000_otuput', save=save)
+plot_output(f0, dataset=train_dataset_l, order=1, save_dir='plots/multistage', filename=f'f0_{model_name}_output', save=save)
 
 # %% [markdown]
 # ## Metrics (MSE and NMSE)
