@@ -331,7 +331,7 @@ def model_training(model, train_dataloader, test_dataloader, num_epochs,\
         train_loss = 0.0
         test_loss = 0.0
 
-        for batch_functions, batch_derivatives, _ in train_dataloader:
+        for batch_functions, batch_derivatives in train_dataloader:
             # Reshape input: [batch_size, 1, num_points]
             batch_functions = batch_functions.unsqueeze(1)
             batch_derivatives = batch_derivatives.unsqueeze(1)
@@ -349,7 +349,7 @@ def model_training(model, train_dataloader, test_dataloader, num_epochs,\
 
         model.eval()
         with torch.no_grad():
-            for b_test_functions, b_test_derivatives, _ in test_dataloader:
+            for b_test_functions, b_test_derivatives in test_dataloader:
                 b_test_functions = b_test_functions.unsqueeze(1)
                 b_test_derivatives = b_test_derivatives.unsqueeze(1)
 
