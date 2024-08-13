@@ -700,7 +700,7 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
 
         # Calculate and store the average NMSE over the last 50 epochs
         avg_nmse_last_50_epochs[i] = np.mean(general_freq_nmses[-50:])
-        model_path = f"../../models/{model_size}_layers.pth"
+        model_path = f"/home/users/erikwang/multistage/models/{model_size}_layers.pth"
         torch.save(model.state_dict(), model_path)
 
     plt.figure(figsize=(20, 6))
@@ -717,7 +717,7 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
     plt.title('General freq NMSEs during training for different model sizes')
     plt.legend()
 
-    # Second plot comparing the average NMSE over the last 50 epochs
+    # Second plot comparing the average NMSE with each model over the last 50 epochs
     plt.subplot(1, 2, 2)
     plt.plot(model_sizes, avg_nmse_last_50_epochs, 'o-', label='Avg NMSE over last 50 epochs')
 
@@ -739,6 +739,6 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
 model_sizes = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
 
 train_varying_model_size(model_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, split_freq=10, filename='../../plots/spectral_bias/different_layers_loss', save=save, order=None)
+    num_epochs=1000, split_freq=10, filename='/home/users/erikwang/multistage/plots/spectral_bias/different_layers_loss', save=save, order=None)
 
 
