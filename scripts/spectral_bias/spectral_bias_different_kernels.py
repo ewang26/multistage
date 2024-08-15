@@ -597,6 +597,6 @@ def train_varying_kernel_size(kernel_sizes, train_dataloader, test_dataloader, n
 kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
 
 train_varying_kernel_size(kernel_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, split_freq=10, filename='../../plots/spectral_bias/different_kernel_sizes_loss2', save=save, save_model=False, order=None)
+    num_epochs=1000, split_freq=10, filename='/home/users/erikwang/multistage/plots/spectral_biasdifferent_kernel_sizes_loss2', save=save, save_model=False, order=None)
 
 
