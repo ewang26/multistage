@@ -624,11 +624,9 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
 
 
 # %%
-# model_sizes = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
-model_sizes = [3, 6, 9]
-
+model_sizes = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
 train_varying_model_size(model_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, split_freq=10, filename='../../plots/spectral_bias/different_layers_loss', save=save, save_model=False, order=None)
+    num_epochs=1000, split_freq=10, filename='/home/users/erikwang/multistage/plots/spectral_bias/different_layers_loss3', save=save, save_model=False, order=None)
 
 # %%
 
