@@ -158,42 +158,6 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-# %%
-# Save datasets
-# torch.save(general_freq_dataset, 'datasets/general_freq_dataset.pt')
-# torch.save(low_freq_dataset, 'datasets/low_freq_dataset.pt')
-# torch.save(high_freq_dataset, 'datasets/high_freq_dataset.pt')
-
-# %% [markdown]
-# Stopped here
-
-# %% [markdown]
-# ## Model architecture
-
-# %% [markdown]
-# This CNN uses 3 layers, each with kernel size 3
-
-# %%
-# simple 1D CNN
-class SimpleCNN(nn.Module):
-    def __init__(self):
-        super(SimpleCNN, self).__init__()
-        self.conv1 = nn.Conv1d(1, 64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv1d(64, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv1d(64, 1, kernel_size=3, padding=1)
-        self.relu = nn.ReLU()
-        self.tanh = nn.Tanh()
-
-    def forward(self, x):
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.conv3(x)
-        return x
-
-# %%
-f0 = SimpleCNN()
-criterion = nn.MSELoss()
-
 # %% [markdown]
 # ## Miscellaneous plotting functions
 
@@ -281,6 +245,9 @@ def get_random_function(dataset, shuffle=True):
 
 # %% [markdown]
 # ## Function to train model
+
+# %%
+criterion = nn.MSELoss()
 
 # %%
 train_losses, test_losses = [], []
@@ -501,124 +468,6 @@ set_seed(seed)
 L3ModelK15 = SimpleCNN(n_layers=3, kernel_size=15)
 plot_all_outputs(L3ModelK15, model_name='L3ModelK15')
 
-# %% [markdown]
-# ## Trying to create the colormap
-
-# %% [markdown]
-# **Correct version with dataloader as input**
-
-# %%
-def compute_fft_and_max_freq(dataloader, compute_output=False, model=None):
-    fft_amplitudes = []
-    max_frequencies = []
-    T = 2 * torch.pi
-    N = 1000
-
-    # Calculate frequencies for the FFT
-    frequencies = torch.fft.fftfreq(N, T / (2 * torch.pi * N))
-    positive_freq_indices = frequencies >= 0
-    positive_freqs = frequencies[positive_freq_indices]
-
-    # Iterate over each batch
-    for functions, _ in dataloader:  # Note that derivatives are ignored in this loop
-        
-        if compute_output:
-            functions = model(functions.unsqueeze(1)).squeeze()
-            # output = model(functions)
-            
-            # output = output.squeeze()
-            # functions = output # set this so that the FFTs can be computed in the next line
-        
-        # Compute FFT using PyTorch
-        F = torch.fft.fft(functions)
-        magnitudes = torch.abs(F) / N
-
-        # Consider only positive frequencies
-        positive_magnitudes = magnitudes[:, positive_freq_indices]
-
-        fft_amplitudes.append(positive_magnitudes)
-        
-        # Maximum frequency based on the highest amplitude for each function in the batch
-        max_indices = torch.argmax(positive_magnitudes, dim=1)
-        batch_max_freqs = positive_freqs[max_indices]
-        max_frequencies.extend(batch_max_freqs)
-
-    return torch.vstack(fft_amplitudes), torch.tensor(max_frequencies), positive_freqs
-
-def plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type, xmin=0, xmax=0):
-    fft_amplitudes = fft_amplitudes.detach().numpy()
-    max_frequencies = max_frequencies.detach().numpy()
-    freqs = freqs.detach().numpy()
-    
-    # Sort functions by the maximum frequency
-    sorted_indices = np.argsort(-max_frequencies)  # Sort in descending order
-    sorted_fft = fft_amplitudes[sorted_indices]
-
-    plt.figure(figsize=(10, 6))
-    im = plt.imshow(sorted_fft, aspect='auto', extent=[freqs[0], freqs[-1], 0, len(sorted_fft)])
-    plt.colorbar(im, label='Amplitude')
-    plt.xlabel('Frequency (rad/s)')
-    plt.ylabel('Function Index (sorted by max frequency)')
-    plt.title(f'FFT Amplitude Heatmap for {fun_type}')
-    plt.xlim([xmin, xmax])
-    plt.show()
-
-
-# %%
-def plot_heatmaps(model):
-    fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(low_freq_dataloader,\
-        compute_output=True, model=model)
-    plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='Low freq model outputs', xmin=0, xmax=6)
-
-    fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(general_freq_dataloader,\
-        compute_output=True, model=model)
-    plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='General freq model outputs', xmin=0, xmax=16)
-
-    fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(high_freq_dataloader,\
-        compute_output=True, model=model)
-    plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='High freq model outputs', xmin=10, xmax=16)
-
-
-# %%
-fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(low_freq_dataloader)
-plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='Function', xmin=0, xmax=6)
-
-# %% [markdown]
-# ### Heatmap for low frequency dataset
-
-# %%
-# fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(low_freq_functions)
-# plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='Function', xmin=0, xmax=6)
-# # Note: we should let xlim = max_freq + 1 since the FFT calculates positive frequency past the peak
-# # i.e., the frequency will only go to 0 at x=6 for sin(5x)
-
-# %% [markdown]
-# ### Heatmap for general frequencies
-
-# %%
-fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(general_freq_dataloader)
-plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='Function', xmin=0, xmax=16)
-
-# %% [markdown]
-# ### Heatmap for high frequencies
-
-# %%
-fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(high_freq_dataloader)
-plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='high freq function', xmin=10, xmax=16)
-
-# %% [markdown]
-# ## Frequencies of model outputs
-
-# %%
-fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(general_freq_dataloader,\
-    compute_output=True, model=L3ModelK15)
-plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='Model outputs', xmin=0, xmax=16)
-
-# %%
-fft_amplitudes, max_frequencies, freqs = compute_fft_and_max_freq(low_freq_dataloader,\
-    compute_output=True, model=L3ModelK15)
-plot_heatmap(fft_amplitudes, max_frequencies, freqs, fun_type='Model outputs', xmin=0, xmax=6)
-
 # %%
 print(compute_mse(train_dataloader_l, L3ModelK15)[1])
 
@@ -627,14 +476,19 @@ print(compute_mse(train_dataloader_l, L3ModelK15)[1])
 
 # %%
 def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num_epochs,\
-    split_freq=None, filename=None, save=None, order=None):
+    split_freq=None, filename=None, save=None, save_model=False, order=None):
     all_train_losses = []
     all_test_losses = []
 
     general_freq_nmse_dict = {}
+    low_freq_nmse_dict = {}
+    high_freq_nmse_dict = {}
+
     epoch_list = []
 
-    avg_nmse_last_50_epochs = np.zeros(len(model_sizes))
+    avg_gen_nmse_last_50_epochs = np.zeros(len(model_sizes))
+    avg_low_nmse_last_50_epochs = np.zeros(len(model_sizes))
+    avg_high_nmse_last_50_epochs = np.zeros(len(model_sizes))
 
     lr = 1e-3
 
@@ -647,16 +501,21 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
         train_losses = []
         test_losses = []
         general_freq_nmses = []
+        low_freq_nmses = []
+        high_freq_nmses = []
 
         for epoch in range(num_epochs):
             model.train()
             train_loss = 0.0
             test_loss = 0.0
 
-            if epoch % split_freq == 0:
-                _, g, _ = print_and_store_metrics(model)
-                general_freq_nmses.append(g)
-                epoch_list.append(epoch)
+            # Calculate the metrics at every iteration
+            l, g, h = print_and_store_metrics(model)
+            general_freq_nmses.append(g)
+            low_freq_nmses.append(l)
+            high_freq_nmses.append(h)
+
+            epoch_list.append(epoch)
 
             for batch_functions, batch_derivatives in train_dataloader:
                 batch_functions = batch_functions.unsqueeze(1)
@@ -697,16 +556,25 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
 
         # Store the general frequency NMSEs in the dictionary
         general_freq_nmse_dict[model_size] = general_freq_nmses
+        low_freq_nmse_dict[model_size] = low_freq_nmses
+        high_freq_nmse_dict[model_size] = high_freq_nmses
 
         # Calculate and store the average NMSE over the last 50 epochs
-        avg_nmse_last_50_epochs[i] = np.mean(general_freq_nmses[-50:])
-        model_path = f"/home/users/erikwang/multistage/models/multi_layers/{model_size}_layers.pth"
-        torch.save(model.state_dict(), model_path)
+        # for each of the freq dataseets
+        avg_gen_nmse_last_50_epochs[i] = np.mean(general_freq_nmses[-50:])
+        avg_low_nmse_last_50_epochs[i] = np.mean(low_freq_nmses[-50:])
+        avg_high_nmse_last_50_epochs[i] = np.mean(high_freq_nmses[-50:])
 
-    plt.figure(figsize=(20, 6))
+        model_path = f"../../models/{model_size}_layers.pth"
+        if save_model:
+            torch.save(model.state_dict(), model_path)
+
+
+    ### PLOTS
+    plt.figure(figsize=(20, 15))
 
     # Plot the general NMSEs for each model size on the same plot
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 2, 1)
     for model_size, nmse_values in general_freq_nmse_dict.items():
         plt.plot(epoch_list[:len(nmse_values)], nmse_values, label=f'{model_size} layers')
 
@@ -717,13 +585,33 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
     plt.title('General freq NMSEs during training for different model sizes')
     plt.legend()
 
-    # Second plot comparing the average NMSE with each model over the last 50 epochs
-    plt.subplot(1, 2, 2)
-    plt.plot(model_sizes, avg_nmse_last_50_epochs, 'o-', label='Avg NMSE over last 50 epochs')
+    # Second plot comparing the average NMSE over the last 50 epochs
+    plt.subplot(2, 2, 2)
+    plt.plot(model_sizes, avg_gen_nmse_last_50_epochs, 'o-', label='Avg gen NMSE over last 50 epochs')
 
     plt.xlabel('Layers in model (with kernel size 3)')
     plt.ylabel('Average General freq NMSE (Last 50 epochs)')
     plt.title('Average General freq NMSEs for different model depths')
+    plt.legend()
+    plt.grid(True)
+
+    # Third plot comparing the average low NMSE over the last 50 epochs
+    plt.subplot(2, 2, 3)
+    plt.plot(model_sizes, avg_low_nmse_last_50_epochs, 'o-', label='Avg low NMSE over last 50 epochs')
+
+    plt.xlabel('Layers in model (with kernel size 3)')
+    plt.ylabel('Average General freq NMSE (Last 50 epochs)')
+    plt.title('Average General freq NMSEs for different model depths')
+    plt.legend()
+    plt.grid(True)
+
+    # Third plot comparing the average high NMSE over the last 50 epochs
+    plt.subplot(2, 2, 4)
+    plt.plot(model_sizes, avg_high_nmse_last_50_epochs, 'o-', label='Avg high NMSE over last 50 epochs')
+
+    plt.xlabel('Layers in model (with kernel size 3)')
+    plt.ylabel('Average high freq NMSE (Last 50 epochs)')
+    plt.title('Average high freq NMSEs for different model depths')
     plt.legend()
     plt.grid(True)
 
@@ -732,13 +620,17 @@ def train_varying_model_size(model_sizes, train_dataloader, test_dataloader, num
         plt.savefig(filename)  
     plt.show()
 
-    return all_train_losses, all_test_losses
+    return all_train_losses, all_test_losses, general_freq_nmse_dict, low_freq_nmse_dict, high_freq_nmse_dict
 
 
 # %%
-model_sizes = [3, 9, 15, 21, 27]
+# model_sizes = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+model_sizes = [3, 6, 9]
 
 train_varying_model_size(model_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, split_freq=10, filename='/home/users/erikwang/multistage/plots/spectral_bias/different_layers_loss2', save=save, order=None)
+    num_epochs=1000, split_freq=10, filename='../../plots/spectral_bias/different_layers_loss', save=save, save_model=False, order=None)
+
+# %%
+
 
 
