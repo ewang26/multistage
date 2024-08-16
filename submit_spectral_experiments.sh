@@ -14,4 +14,4 @@
 module load python/3.9.0
 
 source ../venvs/sciml3/bin/activate
-python3 /home/users/erikwang/multistage/scripts/spectral_bias/spectral_bias_different_layers.py
+python3 /home/users/erikwang/multistage/scripts/spectral_bias/spectral_bias_different_kernels.py
