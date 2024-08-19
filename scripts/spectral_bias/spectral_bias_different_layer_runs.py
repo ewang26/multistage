@@ -527,9 +527,9 @@ def train_varying_kernel_size(kernel_sizes, train_dataloader, test_dataloader, n
         all_test_losses.append(test_losses)
 
         # Store the general frequency NMSEs in the dictionary
-        general_freq_nmse_dict[kernel_size] = general_freq_nmses
-        low_freq_nmse_dict[kernel_size] = low_freq_nmses
-        high_freq_nmse_dict[kernel_size] = high_freq_nmses
+        general_freq_nmse_dict[model_size] = general_freq_nmses
+        low_freq_nmse_dict[model_size] = low_freq_nmses
+        high_freq_nmse_dict[model_size] = high_freq_nmses
 
         # Calculate and store the average NMSE over the last 50 epochs
         # for each of the freq dataseets
@@ -589,7 +589,7 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
     plt.errorbar(kernel_sizes, mean_gen, yerr=std_gen, fmt='o-', label='Avg General Freq NMSE over last 50 epochs', capsize=5)
     plt.xlabel('Kernel Sizes')
     plt.ylabel('NMSE')
-    plt.title('Average General Frequency NMSEs for Different Kernel Sizes')
+    plt.title('Average General Frequency NMSEs for Different Model Sizes')
     plt.legend()
     plt.grid(True)
 
@@ -607,13 +607,9 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
 model_sizes = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
 seeds = [1, 2, 3]
 
-# %%
-# kernel_sizes = [3, 7, 11]
-# seeds = [1, 2, 3]
-
 results = run_with_multiple_seeds(model_sizes, train_dataloader_g, test_dataloader_g,\
     num_epochs=1000, seeds=seeds, split_freq=2,\
-    filename="/home/users/erikwang/multistage/plots/spectral_bias/model_5runs",\
+    filename="/home/users/erikwang/multistage/plots/spectral_bias/layers_3runs",\
     save=True, save_model=True, order=None)
 
 # %%
