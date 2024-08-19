@@ -6,8 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --time=24:00:00
-#SBATCH --gpus=1
+#SBATCH --time=36:00:00
+#SBATCH --gpus=2
 #SBATCH --constraint=GPU_SKU:A100_SXM4
 #SBATCH --mem-per-cpu=10G
 
