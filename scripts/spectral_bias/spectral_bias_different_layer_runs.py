@@ -604,7 +604,7 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
 
 
 # %%
-model_sizes = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+model_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
 seeds = [1, 2, 3]
 
 results = run_with_multiple_seeds(model_sizes, train_dataloader_g, test_dataloader_g,\
