@@ -604,16 +604,16 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
 
 
 # %%
-kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
-seeds = [1, 2, 3]
+# kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
+# seeds = [1, 2, 3, 4, 5]
 
 # %%
-# kernel_sizes = [3, 7, 11]
-# seeds = [1, 2, 3]
+kernel_sizes = [3, 7, 11]
+seeds = [1, 2, 3]
 
 results = run_with_multiple_seeds(kernel_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, seeds=seeds, split_freq=2,\
-    filename="/home/users/erikwang/multistage/plots/spectral_bias/kernel_3runs2",\
+    num_epochs=100, seeds=seeds, split_freq=2,\
+    filename="spectral_bias/kernel_3runs2",\
     save=True, save_model=False, order=None)
 
 # %%
