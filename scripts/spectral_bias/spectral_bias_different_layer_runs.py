@@ -570,10 +570,10 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
     for k, values in all_epochs_nmse.items():
         values = np.array(values)  # Convert list of lists to 2D numpy array
         mean_values = np.mean(values, axis=0)
-        std_values = np.std(values, axis=0)
+        # std_values = np.std(values, axis=0)
         epochs = range(1, num_epochs + 1)
         plt.plot(epochs, mean_values, label=f'Kernel Size {k}')
-        plt.fill_between(epochs, mean_values - std_values, mean_values + std_values, alpha=0.2)
+        # plt.fill_between(epochs, mean_values - std_values, mean_values + std_values, alpha=0.2)
     plt.xlabel('Epoch')
     plt.ylabel('General freq NMSE')
     plt.yscale('log')
@@ -604,12 +604,13 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
 
 
 # %%
-model_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
+# model_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
+model_sizes = [3, 5, 7]
 seeds = [1, 2, 3]
 
 results = run_with_multiple_seeds(model_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, seeds=seeds, split_freq=2,\
-    filename="/home/users/erikwang/multistage/plots/spectral_bias/layers_3runs",\
+    num_epochs=100, seeds=seeds, split_freq=2,\
+    filename="spectral_bias/layers_5runs",\
     save=True, save_model=True, order=None)
 
 # %%
