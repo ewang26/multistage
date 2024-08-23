@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=serc
-#SBATCH --job-name=test1a
-#SBATCH --output=test_%A.out  
+#SBATCH --job-name=test_layer_3runs
+#SBATCH --output=test_layer_runs2%A.out  
 #SBATCH --error=test_%A.out 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -14,4 +14,4 @@
 module load python/3.9.0
 
 source ../venvs/sciml3/bin/activate
-python3 /home/users/erikwang/multistage/scripts/spectral_bias/spectral_bias_different_kernel_runs.py
+python3 /home/users/erikwang/multistage/scripts/spectral_bias/spectral_bias_different_layer_runs.py

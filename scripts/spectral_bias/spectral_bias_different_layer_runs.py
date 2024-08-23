@@ -100,8 +100,8 @@ num_points = 1000
 batch_size = 32
 
 low_freq_functions, low_freq_derivatives = generate_freq_dataset(num_samples, num_points, 1, 5)
-general_freq_functions, general_freq_derivatives = generate_freq_dataset(num_samples, num_points, 1, 15)
-high_freq_functions, high_freq_derivatives = generate_freq_dataset(num_samples, num_points, 10, 15)
+general_freq_functions, general_freq_derivatives = generate_freq_dataset(num_samples, num_points, 1, 10)
+high_freq_functions, high_freq_derivatives = generate_freq_dataset(num_samples, num_points, 6, 10)
 
 low_freq_dataset = TensorDataset(torch.tensor(low_freq_functions), torch.tensor(low_freq_derivatives))
 general_freq_dataset = TensorDataset(torch.tensor(general_freq_functions), torch.tensor(general_freq_derivatives))
@@ -572,12 +572,12 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
         mean_values = np.mean(values, axis=0)
         # std_values = np.std(values, axis=0)
         epochs = range(1, num_epochs + 1)
-        plt.plot(epochs, mean_values, label=f'Kernel Size {k}')
+        plt.plot(epochs, mean_values, label=f'Layers')
         # plt.fill_between(epochs, mean_values - std_values, mean_values + std_values, alpha=0.2)
     plt.xlabel('Epoch')
     plt.ylabel('General freq NMSE')
     plt.yscale('log')
-    plt.title('General freq NMSEs during training for different kernel sizes')
+    plt.title('General freq NMSEs during training for different layers')
     plt.legend()
 
     # Calculate the mean and standard deviation of the NMSE across all runs for the last 50 epochs
@@ -587,7 +587,7 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
     # Plotting the average NMSE over the last 50 epochs with error bars
     plt.subplot(2, 2, 2)
     plt.errorbar(kernel_sizes, mean_gen, yerr=std_gen, fmt='o-', label='Avg General Freq NMSE over last 50 epochs', capsize=5)
-    plt.xlabel('Kernel Sizes')
+    plt.xlabel('Model Layers')
     plt.ylabel('NMSE')
     plt.title('Average General Frequency NMSEs for Different Model Sizes')
     plt.legend()
@@ -605,12 +605,13 @@ def run_with_multiple_seeds(kernel_sizes, train_dataloader, test_dataloader, num
 
 # %%
 # model_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
-model_sizes = [3, 5, 7]
+# model_sizes = [3, 5, 7]
+model_sizes = [3, 7, 11, 15, 19, 23, 27, 31]
 seeds = [1, 2, 3]
 
 results = run_with_multiple_seeds(model_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=100, seeds=seeds, split_freq=2,\
-    filename="spectral_bias/layers_5runs",\
+    num_epochs=500, seeds=seeds, split_freq=2,\
+    filename="spectral_bias/layers_3runs",\
     save=True, save_model=True, order=None)
 
 # %%
