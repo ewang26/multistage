@@ -367,7 +367,6 @@ plot_frequencies(derivative)
 # %%
 set_seed(seed)
 L3ModelK3 = SimpleCNN(n_layers=3, kernel_size=3)
-L3ModelK3.load_state_dict(torch.load('../../models/3_layers.pth'))
 
 L3ModelK3_untrained = SimpleCNN(n_layers=3, kernel_size=3)
 
