@@ -851,16 +851,16 @@ def run_with_multiple_seeds2(kernel_sizes, train_dataloader, test_dataloader, nu
     return all_epochs_nmse, mean_gen, std_gen, mean_low, std_low, mean_high, std_high
 
 # %%
-kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
-seeds = [1, 2, 3, 4, 5]
+# kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
+# seeds = [1, 2, 3, 4, 5]
 
 # %%
-# kernel_sizes = [3, 7, 11, 15]
-# seeds = [1, 2, 3]
+kernel_sizes = [3, 7, 11, 15]
+seeds = [1, 2, 3]
 
 results = run_with_multiple_seeds2(kernel_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=1000, seeds=seeds, split_freq=2,\
-    filename="spectral_bias/kernel_5_runs_final",\
+    num_epochs=100, seeds=seeds, split_freq=2,\
+    filename="spectral_bias/kernel_3_runs_test",\
     save=True, save_model=False, order=None)
 
 # %%
