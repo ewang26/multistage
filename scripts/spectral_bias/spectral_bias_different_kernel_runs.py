@@ -860,7 +860,7 @@ seeds = [1, 2, 3, 4, 5]
 
 results = run_with_multiple_seeds2(kernel_sizes, train_dataloader_g, test_dataloader_g,\
     num_epochs=1000, seeds=seeds, split_freq=2,\
-    filename="/home/users/erikwang/multistage/plots/spectral_bias/kernel_5_runs_final",\
+    filename="spectral_bias/kernel_5_runs_final",\
     save=True, save_model=False, order=None)
 
 # %%
