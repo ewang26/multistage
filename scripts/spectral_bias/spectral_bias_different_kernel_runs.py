@@ -807,14 +807,12 @@ def run_with_multiple_seeds2(kernel_sizes, train_dataloader, test_dataloader, nu
     last_key = next(reversed(all_epochs_nmse))  # Get the last key
     
     for k, values in all_epochs_nmse.items():
-        if k == first_key or k == last_key:
-            values = np.array(values)  # Convert list of lists to 2D numpy array
-            mean_values = np.mean(values, axis=0)
-            std_error = np.std(values, axis=0) / np.sqrt(num_runs)
-            epochs = range(1, num_epochs + 1)
-            plt.plot(epochs, mean_values, label=f'Kernel Size {k}')
-            plt.fill_between(epochs, mean_values - std_error, mean_values + std_error, alpha=0.2)
-
+        values = np.array(values)  # Convert list of lists to 2D numpy array
+        mean_values = np.mean(values, axis=0)
+        std_error = np.std(values, axis=0) / np.sqrt(num_runs)
+        epochs = range(1, num_epochs + 1)
+        plt.plot(epochs, mean_values, label=f'Kernel Size {k}')
+        plt.fill_between(epochs, mean_values - std_error, mean_values + std_error, alpha=0.2)
 
     plt.xlabel('Epoch')
     plt.ylabel('NMSE')
@@ -851,16 +849,16 @@ def run_with_multiple_seeds2(kernel_sizes, train_dataloader, test_dataloader, nu
     return all_epochs_nmse, mean_gen, std_gen, mean_low, std_low, mean_high, std_high
 
 # %%
-# kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
-# seeds = [1, 2, 3, 4, 5]
+kernel_sizes = [3, 7, 11, 15, 19, 23, 27, 31, 35]
+seeds = [1, 2, 3, 4, 5]
 
 # %%
-kernel_sizes = [3, 7, 11, 15]
-seeds = [1, 2, 3]
+# kernel_sizes = [3, 7, 11, 15]
+# seeds = [1, 2, 3]
 
 results = run_with_multiple_seeds2(kernel_sizes, train_dataloader_g, test_dataloader_g,\
-    num_epochs=100, seeds=seeds, split_freq=2,\
-    filename="spectral_bias/kernel_3_runs_test",\
+    num_epochs=1000, seeds=seeds, split_freq=2,\
+    filename="spectral_bias/kernel_5_runs_with_all_nmses_in_plot",\
     save=True, save_model=False, order=None)
 
 # %%
